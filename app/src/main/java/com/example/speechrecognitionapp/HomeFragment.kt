@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.preference.PreferenceManager
 import com.example.speechrecognitionapp.databinding.FragmentHomeBinding
@@ -26,6 +27,8 @@ class HomeFragment : Fragment(), RecordingCallback {
 
     private var sharedPreferences: SharedPreferences? = null
 
+    private lateinit var txtNoiseValue: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -39,6 +42,7 @@ class HomeFragment : Fragment(), RecordingCallback {
         binding = FragmentHomeBinding.inflate(inflater)
         val view = binding.root
 
+
         val listView = binding.listView
         adapter = ResultAdapter(results, activity?.applicationContext)
         listView.adapter = adapter
@@ -47,6 +51,8 @@ class HomeFragment : Fragment(), RecordingCallback {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
         binding.btnRecord.setOnClickListener {
             if(isServiceBound) {
                 // Stop the service, if running
@@ -60,6 +66,8 @@ class HomeFragment : Fragment(), RecordingCallback {
         }
 
     }
+
+
     override fun onDataUpdated(data: ArrayList<Result>) {
         Log.d(TAG, "Updated:" + data.size)
         activity?.runOnUiThread {

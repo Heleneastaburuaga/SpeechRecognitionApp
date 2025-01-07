@@ -74,6 +74,8 @@ class AudioRecordingService : Service() {
 
     var serviceBinder = RunServiceBinder()
 
+    private var isNoiseDetected = false
+
     override fun onCreate() {
         Log.d(TAG, "Creating service")
         super.onCreate()
@@ -176,12 +178,18 @@ class AudioRecordingService : Service() {
     }
 
     private fun startRecording() {
+        val bufferSize = AudioRecord.getMinBufferSize(SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_FORMAT)
+        audioRecord = AudioRecord(AUDIO_INPUT, SAMPLE_RATE, AUDIO_CHANNELS, AUDIO_FORMAT, bufferSize)
+
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED){
             // Access denied
             return
         }
         isRecording = true
+
         audioRecordingThread = Thread {
+            audioRecord?.startRecording()
+
             run {
                 record()
             }
@@ -224,16 +232,20 @@ class AudioRecordingService : Service() {
                 val read = audioRecord?.read(audioBuffer, 0, samplesToRead)
 
                 if (read != AudioRecord.ERROR_INVALID_OPERATION && read != AudioRecord.ERROR_BAD_VALUE) {
+
                     for (i in 0 until read!!){
                         recordingBuffer[totalSamplesRead + i] = audioBuffer[i].toDouble() / Short.MAX_VALUE
                     }
                     totalSamplesRead += read
+                    detectNoise(recordingBuffer)
                 }
 
 
             }
 
-            computeBuffer(recordingBuffer)
+            if (isNoiseDetected) {  // Verifica si hay ruido detectado
+                computeBuffer(recordingBuffer)
+            }
 
             System.arraycopy(recordingBuffer, windowSize, tempRecordingBuffer, 0, recordingBuffer.size - windowSize)
             recordingBuffer = DoubleArray(RECORDING_LENGTH)
@@ -244,6 +256,26 @@ class AudioRecordingService : Service() {
         stopRecording()
     }
 
+    private fun detectNoise(audioBuffer: DoubleArray) {
+        val rms = calculateRMS(audioBuffer)
+        val db = 20 * Math.log10(rms)
+
+        if (db > energyThreshold) {
+            Log.d(TAG, "Noise detected: $db dB")
+            isNoiseDetected = true  // Cuando detectamos ruido, lo activamos
+        } else {
+            isNoiseDetected = false  // Si no hay ruido, desactivamos
+        }
+    }
+
+    private fun calculateRMS(audioBuffer: DoubleArray): Double {
+        var sum = 0.0
+        for (sample in audioBuffer) {
+            sum += sample * sample
+        }
+
+        return Math.sqrt(sum / audioBuffer.size)
+    }
     private fun computeBuffer(audioBuffer: DoubleArray) {
         val mfccConvert = MFCC()
         mfccConvert.setSampleRate(SAMPLE_RATE)
