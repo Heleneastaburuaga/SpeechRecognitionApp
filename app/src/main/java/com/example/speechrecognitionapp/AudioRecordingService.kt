@@ -236,8 +236,11 @@ class AudioRecordingService : Service() {
                     for (i in 0 until read!!){
                         recordingBuffer[totalSamplesRead + i] = audioBuffer[i].toDouble() / Short.MAX_VALUE
                     }
+
                     totalSamplesRead += read
                     detectNoise(recordingBuffer)
+
+
                 }
 
 
@@ -259,8 +262,8 @@ class AudioRecordingService : Service() {
     private fun detectNoise(audioBuffer: DoubleArray) {
         val rms = calculateRMS(audioBuffer)
         val db = 20 * Math.log10(rms)
-
-        if (db > energyThreshold) {
+        Log.d(TAG, "Noise detected: $db dB")
+        if (db > -80) {
             Log.d(TAG, "Noise detected: $db dB")
             isNoiseDetected = true  // Cuando detectamos ruido, lo activamos
         } else {
