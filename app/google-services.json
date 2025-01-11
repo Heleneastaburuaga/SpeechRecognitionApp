@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "410176923560",
+    "project_id": "heltilspeechrecognition",
+    "storage_bucket": "heltilspeechrecognition.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:410176923560:android:a59cd9c6b05a3e7e071f9d",
+        "android_client_info": {
+          "package_name": "com.example.speechrecognitionapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpZyxIJL_p8hTKpfIDGj5KMm_fP1jYqHI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

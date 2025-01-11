@@ -18,7 +18,10 @@ import org.tensorflow.lite.support.common.FileUtil
 import org.tensorflow.lite.support.common.TensorProcessor
 import org.tensorflow.lite.support.label.TensorLabel
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer
+import java.io.File
 import kotlin.collections.ArrayList
+import kotlin.math.log10
+import kotlin.math.sqrt
 
 
 class AudioRecordingService : Service() {
@@ -67,6 +70,8 @@ class AudioRecordingService : Service() {
 
     private var isBackground = true
 
+    private lateinit var logger: Logger
+
     inner class RunServiceBinder : Binder() {
         val service: AudioRecordingService
             get() = this@AudioRecordingService
@@ -79,6 +84,11 @@ class AudioRecordingService : Service() {
     override fun onCreate() {
         Log.d(TAG, "Creating service")
         super.onCreate()
+
+        val logFile = File(filesDir, "predictions_log${System.currentTimeMillis()}.txt")
+        logger = Logger(this, logFile)
+        logger.startLogging()
+        logger.startFileUploads()
 
         createNotificationChannel()
 
@@ -261,10 +271,10 @@ class AudioRecordingService : Service() {
 
     private fun detectNoise(audioBuffer: DoubleArray) {
         val rms = calculateRMS(audioBuffer)
-        val db = 20 * Math.log10(rms)
-        Log.d(TAG, "Noise detected: $db dB")
-        if (db > -80) {
-            Log.d(TAG, "Noise detected: $db dB")
+        val db = 20 * log10(rms)
+        //Log.d(TAG, "Noise detected: $db dB")
+        if (db > -50) {
+            //Log.d(TAG, "Noise detected: $db dB")
             isNoiseDetected = true  // Cuando detectamos ruido, lo activamos
         } else {
             isNoiseDetected = false  // Si no hay ruido, desactivamos
@@ -277,7 +287,7 @@ class AudioRecordingService : Service() {
             sum += sample * sample
         }
 
-        return Math.sqrt(sum / audioBuffer.size)
+        return sqrt(sum / audioBuffer.size)
     }
     private fun computeBuffer(audioBuffer: DoubleArray) {
         val mfccConvert = MFCC()
@@ -344,6 +354,8 @@ class AudioRecordingService : Service() {
                 Log.d(TAG, "Result: $result")
                 Log.d(TAG, "Result: ${labels.maxBy { it.value }}")
 
+                result?.let { logger.addPrediction(it) }
+
                 updateData(results)
 
                 notification = createNotification()
@@ -372,6 +384,9 @@ class AudioRecordingService : Service() {
 
     override fun onDestroy() {
         stopRecording()
+        logger.stopLogging()
+        logger.stopFileUploads()
+        logger.uploadFileToDropbox()
         super.onDestroy()
         Log.d(TAG, "Destroying service")
     }
