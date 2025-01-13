@@ -22,7 +22,7 @@ class FileUploadWorker(context: Context, workerParams: WorkerParameters) : Worke
         Log.d(TAG, "Uploading file via WorkManager...")
 
         if (ACCESS_TOKEN.isEmpty()) {
-            Log.d(TAG, "no access token")
+            Log.d(TAG, "No access token")
             return Result.failure()
         }
 

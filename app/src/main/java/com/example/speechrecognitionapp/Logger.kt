@@ -42,12 +42,13 @@ class Logger(private val context: Context, private val logFile: File) {
             override fun run() {
                 writeLogsToFile()
             }
-        }, 60000, 60000) // write to log file once per minute
+        }, 60000, 60000) // write to log file once per minute starting in one minute
     }
 
     fun stopLogging() {
         Log.d(TAG, "Logging stopped")
         if (predictionCount > 0 || predictedKeywords.isNotEmpty()) {
+            Log.d(TAG, "Found unwritten logs")
             writeLogsToFile()
         }
         logTimer?.cancel()
@@ -60,7 +61,7 @@ class Logger(private val context: Context, private val logFile: File) {
     }
 
     private fun writeLogsToFile() {
-        Log.d(TAG, "Writing logs to file")
+        Log.d(TAG, "Writing logs to file...")
         try {
             val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
             val formattedTime = formatter.format(Date(System.currentTimeMillis()))
@@ -74,7 +75,7 @@ class Logger(private val context: Context, private val logFile: File) {
                 }
             }
             resetCounters()
-            Log.d(TAG, "Successfully update log file")
+            Log.d(TAG, "Successfully updated log file")
         } catch (e: Exception) {
             Log.d(TAG, "Error writing to log file: ${e.message}", e)
         }
@@ -90,7 +91,12 @@ class Logger(private val context: Context, private val logFile: File) {
         Log.d(TAG, "Uploading file...")
 
         if (ACCESS_TOKEN.isEmpty()) {
-            Log.d(TAG, "no access token")
+            Log.d(TAG, "No access token")
+            return
+        }
+
+        if (!logFile.exists()) {
+            Log.d(TAG, "Log file does not exist")
             return
         }
 
